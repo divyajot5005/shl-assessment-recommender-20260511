@@ -9,7 +9,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -131,6 +131,7 @@ def main() -> None:
             "Groq llama-3.3-70b-versatile is configured through the OpenAI-compatible API. The model is deliberately outside the correctness path: product selection, constraints, and URLs are produced by local catalog logic. The hosted model is used only to phrase the final reply from an already-selected shortlist. This avoids deployment drift where a model extraction step could reinterpret use_case, must-have terms, or exclusions differently from local evaluation.",
             body,
         ),
+        PageBreak(),
         Paragraph("Evaluation", heading),
     ]
 
