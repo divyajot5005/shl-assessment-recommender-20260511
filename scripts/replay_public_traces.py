@@ -87,6 +87,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", help="Evaluate a deployed /chat endpoint instead of the local service.")
     parser.add_argument("--output-name", default="public_trace_metrics.json")
+    parser.add_argument("--timeout-seconds", type=float, default=120.0)
+    parser.add_argument("--max-retries", type=int, default=4)
     return parser.parse_args()
 
 
@@ -105,23 +107,37 @@ def run_local_chat(service: SHLAgentService, messages: list[ChatMessage]) -> tup
     )
 
 
-def run_remote_chat(base_url: str, messages: list[ChatMessage]) -> tuple[dict[str, Any], float]:
+def run_remote_chat(
+    base_url: str,
+    messages: list[ChatMessage],
+    timeout_seconds: float,
+    max_retries: int,
+) -> tuple[dict[str, Any], float]:
     payload = {"messages": [item.model_dump() for item in messages]}
-    started = time.perf_counter()
-    with httpx.Client(timeout=30.0) as client:
-        response = client.post(base_url.rstrip("/") + "/chat", json=payload)
-        response.raise_for_status()
-    latency = time.perf_counter() - started
-    body = response.json()
-    return (
-        {
-            "reply": str(body["reply"]),
-            "recommendations": list(body.get("recommendations", [])),
-            "end_of_conversation": bool(body["end_of_conversation"]),
-            "debug": {},
-        },
-        latency,
-    )
+    last_error: Exception | None = None
+    for attempt in range(max_retries + 1):
+        started = time.perf_counter()
+        try:
+            with httpx.Client(timeout=timeout_seconds) as client:
+                response = client.post(base_url.rstrip("/") + "/chat", json=payload)
+                response.raise_for_status()
+            latency = time.perf_counter() - started
+            body = response.json()
+            return (
+                {
+                    "reply": str(body["reply"]),
+                    "recommendations": list(body.get("recommendations", [])),
+                    "end_of_conversation": bool(body["end_of_conversation"]),
+                    "debug": {},
+                },
+                latency,
+            )
+        except (httpx.HTTPError, ValueError) as exc:
+            last_error = exc
+            if attempt >= max_retries:
+                raise
+            time.sleep(min(2 * (attempt + 1), 8))
+    raise RuntimeError(f"remote chat failed after retries: {last_error}")
 
 
 def main() -> None:
@@ -146,7 +162,7 @@ def main() -> None:
         for user_turn in trace.user_turns:
             messages.append(ChatMessage(role="user", content=user_turn))
             if args.base_url:
-                result, latency = run_remote_chat(args.base_url, messages)
+                result, latency = run_remote_chat(args.base_url, messages, args.timeout_seconds, args.max_retries)
             else:
                 result, latency = run_local_chat(service, messages)
             messages.append(ChatMessage(role="assistant", content=result["reply"]))
