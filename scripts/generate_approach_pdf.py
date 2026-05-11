@@ -107,9 +107,28 @@ def main() -> None:
             "The conversation layer is stateless over the full message history. It applies guardrails first, then classifies the turn into clarify, recommend, refine, or compare. Clarification is capped at two questions and is driven by explicit missing-slot checks such as role scope, contact-center language variant, full-stack orientation, and leadership use case. Shortlist-driving state remains deterministic. When hosted credentials are present, an OpenAI-compatible LLM can rewrite the final prose reply, but it does not control product selection by default.",
             body,
         ),
+        Paragraph("API and runtime contract", heading),
+        Paragraph(
+            "The deployed API exposes GET /health and POST /chat. The chat endpoint accepts the full message history and returns a schema-stable response with reply, recommendations, and end_of_conversation. Each recommendation contains only catalog-backed name, URL, and test_type fields. No server-side conversation memory is required, so evaluator replays are deterministic for the same request history and catalog snapshot.",
+            body,
+        ),
         Paragraph("Retrieval and ranking choices", heading),
         Paragraph(
             "Pure keyword matching was not enough for mixed briefs such as job descriptions, role pivots, or product comparisons. The final ranker combines semantic recall with explicit boosts for known catalog behaviors: language-sensitive SVAR/contact-center flows, leadership instrument-plus-report bundles, development stacks such as GSA plus development reports, safety-focused DSI cases, and technical batteries that combine stack tests with Verify G+ and, when appropriate, OPQ32r. Report products are penalized by default so they only surface when the user is clearly asking for feedback, benchmarking, or development outputs.",
+            body,
+        ),
+        Paragraph(
+            "Named-product resolution is handled separately from free-text retrieval. Short aliases such as OPQ, GSA, DSI, and SVAR map to primary instruments before comparison, while low-information aliases are filtered to avoid substring matches against unrelated products. This matters for comparison turns because users often name products by acronym rather than by full catalog title.",
+            body,
+        ),
+        Paragraph("Dialogue policy", heading),
+        Paragraph(
+            "The agent asks for clarification only when the missing information materially changes the product set. For example, a contact-center role needs language and English variant before SVAR can be selected; a broad full-stack brief needs backend, frontend, or balanced orientation before including or omitting secondary frontend and REST tests; leadership requests need selection versus development intent before adding report products. When the remaining turn budget is low, the service returns the best grounded shortlist instead of spending another turn on clarification.",
+            body,
+        ),
+        Paragraph("LLM usage", heading),
+        Paragraph(
+            "Groq llama-3.3-70b-versatile is configured through the OpenAI-compatible API. The model is deliberately outside the correctness path: product selection, constraints, and URLs are produced by local catalog logic. The hosted model is used only to phrase the final reply from an already-selected shortlist. This avoids deployment drift where a model extraction step could reinterpret use_case, must-have terms, or exclusions differently from local evaluation.",
             body,
         ),
         Paragraph("Evaluation", heading),
@@ -180,6 +199,10 @@ def main() -> None:
                 "Evaluation is split into two layers. First, a replay harness walks the 10 public traces turn-by-turn, validates schema compliance, verifies every returned URL is catalog-backed, and computes Recall@10 plus candidate hit rate when internal candidate rankings are available. Second, targeted probes check behaviors the replay traces under-sample: vague-query clarification, shortlist refinement, grounded product comparison, legal refusal, prompt-injection refusal, language constraints, sales-development grounding, and variant disambiguation. The same scripts can target either the local service or a deployed endpoint, which keeps reported metrics aligned with the runtime being submitted.",
                 body,
             ),
+            Paragraph(
+                "Remote evaluation uses the same request schema as the assignment evaluator and includes longer timeouts plus retries to account for free-tier cold starts and transient deploy restarts. This is intentionally separate from local evaluation: local runs expose debug candidate rankings, while live runs prove that the submitted URL returns the same shortlist behavior through the public API surface.",
+                body,
+            ),
         ]
     )
     if live_metrics_table is not None:
@@ -196,9 +219,18 @@ def main() -> None:
                 "Three weaker approaches were discarded. A pure nearest-neighbor retriever over the catalog over-selected report products and missed shortlist composition. A pure rules engine was brittle on long job descriptions and unexpected wording. Live web scraping at request time added avoidable latency and fragility. The final design keeps retrieval local, uses the supplied JSON feed as runtime truth, and limits model usage to optional assistance rather than core correctness.",
                 body,
             ),
+            Paragraph(
+                "One deployment-specific failure was also fixed: when hosted extraction was allowed to alter shortlist-driving fields, the live endpoint underperformed the local metrics on a sales-development trace. The fix was to make role family, use case, language, inclusion, and exclusion state deterministic, then restrict the LLM to response writing. After redeployment, the live replay matched the local Recall@10 result.",
+                body,
+            ),
             Paragraph("Improvement loop", heading),
             Paragraph(
                 "Each iteration was judged against groundedness first, then utility. I used the public-trace replay to identify missed shortlist items, added rules only when they represented genuine catalog behavior rather than narrow wording, and checked that the same changes improved candidate hit rate without breaking refusal or comparison probes. The same evaluation flow can now be rerun against the deployed endpoint before submission, which makes the reported metrics auditable rather than aspirational.",
+                body,
+            ),
+            Paragraph("Operational notes", heading),
+            Paragraph(
+                "The Render deployment uses the Dockerfile in the repository and Groq credentials are provided as environment secrets, not stored in source control. The service is on a free tier, so the first request after inactivity may take roughly 80 seconds, while warm chat calls are typically around one to two seconds in the latest live replay. The /health endpoint is lightweight and remained within the assignment's cold-start allowance.",
                 body,
             ),
         ]
