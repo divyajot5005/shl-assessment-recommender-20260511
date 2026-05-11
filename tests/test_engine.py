@@ -1,4 +1,4 @@
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.engine import SHLAgentService
 from app.schemas import ChatMessage
 
@@ -62,3 +62,53 @@ def test_contact_center_english_prompts_for_variant_before_recommending() -> Non
     )
     assert result.recommendations == []
     assert "Which English variant" in result.reply
+
+
+def test_sales_development_shortlist_stays_grounded() -> None:
+    result = service.chat(
+        [
+            ChatMessage(
+                role="user",
+                content="We need to reskill sales reps and want assessments plus development reports for coaching.",
+            )
+        ]
+    )
+    names = {item.name for item in result.recommendations}
+    assert "Global Skills Assessment" in names
+    assert "Global Skills Development Report" in names
+    assert "Sales Transformation 2.0 - Individual Contributor" in names
+    assert "RESTful Web Services (New)" not in names
+
+
+def test_hosted_state_extraction_is_disabled_by_default(monkeypatch) -> None:
+    hosted_settings = Settings(llm_api_key="test-key")
+    hosted_service = SHLAgentService(hosted_settings)
+
+    def fail_if_called(_messages):
+        raise AssertionError("hosted state extraction should not be used for shortlist state by default")
+
+    monkeypatch.setattr(type(hosted_service.llm), "extract_state", lambda self, messages: fail_if_called(messages))
+    result = hosted_service.chat(
+        [
+            ChatMessage(
+                role="user",
+                content="Hiring a senior Java backend engineer with Spring, SQL, AWS and Docker. Recommend a shortlist.",
+            )
+        ]
+    )
+    names = {item.name for item in result.recommendations}
+    assert "Core Java (Advanced Level) (New)" in names
+    assert "Spring (New)" in names
+
+
+def test_full_stack_role_clarifies_orientation() -> None:
+    result = service.chat(
+        [
+            ChatMessage(
+                role="user",
+                content="Hiring a full stack engineer with Java, Spring, SQL, AWS and Angular. Recommend a shortlist.",
+            )
+        ]
+    )
+    assert result.recommendations == []
+    assert "backend-leaning" in result.reply

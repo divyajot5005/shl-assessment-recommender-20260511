@@ -17,6 +17,14 @@ class HostedLLMClient:
     def enabled(self) -> bool:
         return bool(self.settings.llm_base_url and self.settings.llm_api_key and self.settings.llm_model)
 
+    @property
+    def state_extraction_enabled(self) -> bool:
+        return self.enabled and self.settings.llm_state_extraction_enabled
+
+    @property
+    def reply_rewrite_enabled(self) -> bool:
+        return self.enabled and self.settings.llm_reply_rewrite_enabled
+
     def _post(self, payload: dict[str, Any]) -> dict[str, Any] | None:
         if not self.enabled:
             return None
@@ -39,6 +47,8 @@ class HostedLLMClient:
             return None
 
     def extract_state(self, messages: list[dict[str, str]]) -> dict[str, Any] | None:
+        if not self.state_extraction_enabled:
+            return None
         payload = {
             "model": self.settings.llm_model,
             "temperature": 0,
@@ -68,6 +78,8 @@ class HostedLLMClient:
             return None
 
     def write_reply(self, prompt: str) -> str | None:
+        if not self.reply_rewrite_enabled:
+            return None
         payload = {
             "model": self.settings.llm_model,
             "temperature": self.settings.llm_temperature,

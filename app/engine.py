@@ -141,6 +141,64 @@ CANONICAL_SKILL_PRODUCTS = {
     "spring": "Spring (New)",
     "sql": "SQL (New)",
 }
+ROLE_FAMILY_HINTS = {
+    "contact_center": ("contact center", "contact centre", "call center", "call centre", "customer service"),
+    "sales": ("sales", "account executive", "business development", "revenue", "seller"),
+    "technical": ("engineer", "developer", "full stack", "backend", "frontend", "java", "sql", "aws", "docker"),
+    "finance": ("financial analyst", "accounting", "finance", "numerical"),
+    "operations": ("plant operators", "chemical facility", "safety", "procedure compliance"),
+    "healthcare_admin": ("healthcare admin", "patient records", "hipaa", "medical terminology"),
+    "graduate_management": ("graduate management trainee", "management trainee", "graduate scheme"),
+    "leadership": ("leadership", "executive", "cxo", "succession"),
+    "admin": ("admin assistant", "administrative assistant", "excel", "word"),
+}
+PROFILE_PRODUCT_NAMES = {
+    "leadership": (
+        "Occupational Personality Questionnaire OPQ32r",
+        "OPQ Universal Competency Report 2.0",
+        "OPQ Leadership Report",
+    ),
+    "sales_development": (
+        "Global Skills Assessment",
+        "Global Skills Development Report",
+        "Occupational Personality Questionnaire OPQ32r",
+        "OPQ MQ Sales Report",
+        "Sales Transformation 2.0 - Individual Contributor",
+    ),
+    "contact_center": (
+        "Contact Center Call Simulation (New)",
+        "Entry Level Customer Serv-Retail & Contact Center",
+        "Customer Service Phone Simulation",
+    ),
+    "finance": (
+        "SHL Verify Interactive – Numerical Reasoning",
+        "Financial Accounting (New)",
+        "Basic Statistics (New)",
+        "Graduate Scenarios",
+        "Occupational Personality Questionnaire OPQ32r",
+    ),
+    "operations": (
+        "Manufac. & Indust. - Safety & Dependability 8.0",
+        "Workplace Health and Safety (New)",
+    ),
+    "healthcare_admin": (
+        "HIPAA (Security)",
+        "Medical Terminology (New)",
+        "Microsoft Word 365 - Essentials (New)",
+        "Dependability and Safety Instrument (DSI)",
+        "Occupational Personality Questionnaire OPQ32r",
+    ),
+    "graduate_management": (
+        "SHL Verify Interactive G+",
+        "Occupational Personality Questionnaire OPQ32r",
+        "Graduate Scenarios",
+    ),
+    "admin": (
+        "MS Excel (New)",
+        "MS Word (New)",
+        "Occupational Personality Questionnaire OPQ32r",
+    ),
+}
 
 
 def contains_phrase(text: str, phrase: str) -> bool:
@@ -163,7 +221,10 @@ class ConversationState:
     languages: set[str] = field(default_factory=set)
     job_levels: set[str] = field(default_factory=set)
     category_codes: set[str] = field(default_factory=set)
+    explicit_skill_terms: set[str] = field(default_factory=set)
     use_case: str = "selection"
+    role_family: str = "general"
+    missing_slots: list[str] = field(default_factory=list)
     clarification_count: int = 0
     quick_screen: bool = False
     high_volume: bool = False
@@ -223,6 +284,15 @@ class SHLAgentService:
         shortlist = self._assemble_shortlist(state, candidates)
         reply = self._compose_recommendation_reply(state, shortlist)
         end_of_conversation = self._determine_conversation_end(state, shortlist, reply)
+        debug_candidate_names: list[str] = []
+        for record in shortlist:
+            if record.name not in debug_candidate_names:
+                debug_candidate_names.append(record.name)
+        for candidate in candidates:
+            if candidate.record.name not in debug_candidate_names:
+                debug_candidate_names.append(candidate.record.name)
+            if len(debug_candidate_names) >= 10:
+                break
 
         return AgentResult(
             reply=reply,
@@ -232,8 +302,10 @@ class SHLAgentService:
             ],
             end_of_conversation=end_of_conversation,
             debug={
-                "candidate_names": [candidate.record.name for candidate in candidates[:10]],
+                "candidate_names": debug_candidate_names[:10],
                 "selected_names": [record.name for record in shortlist],
+                "role_family": state.role_family,
+                "missing_slots": state.missing_slots,
             },
         )
 
@@ -312,24 +384,13 @@ class SHLAgentService:
 
         if any(term in combined_normalized for term in ("full battery", "full stack", "cognitive, personality", "cognitive personality")):
             state.category_codes.update({"A", "P"})
+        state.explicit_skill_terms = {term for term in TECH_STACK_TERMS if contains_phrase(combined_normalized, term)}
+        state.role_family = self._infer_role_family(combined_normalized)
 
         for chunk in user_turns:
             self._extract_change_terms(chunk, state)
 
-        llm_hints = self.llm.extract_state(history)
-        if llm_hints:
-            for language in llm_hints.get("languages", []) or []:
-                if isinstance(language, str):
-                    state.languages.add(language)
-            for term in llm_hints.get("must_have", []) or []:
-                if isinstance(term, str) and term.strip():
-                    state.include_terms.add(normalize_text(term))
-            for term in llm_hints.get("avoid", []) or []:
-                if isinstance(term, str) and term.strip():
-                    state.exclude_terms.add(normalize_text(term))
-            llm_use_case = llm_hints.get("use_case")
-            if isinstance(llm_use_case, str) and llm_use_case.strip():
-                state.use_case = llm_use_case.strip().lower()
+        state.missing_slots = self._identify_missing_slots(state)
 
         return state
 
@@ -444,6 +505,58 @@ class SHLAgentService:
                 if cleaned:
                     state.include_terms.add(cleaned)
 
+    def _infer_role_family(self, text: str) -> str:
+        priority = (
+            "contact_center",
+            "sales",
+            "healthcare_admin",
+            "operations",
+            "graduate_management",
+            "leadership",
+            "finance",
+            "technical",
+            "admin",
+        )
+        for role_family in priority:
+            if contains_any_phrase(text, ROLE_FAMILY_HINTS[role_family]):
+                return role_family
+        return "general"
+
+    def _has_scope_anchor(self, state: ConversationState) -> bool:
+        return any(
+            (
+                state.role_family != "general",
+                bool(state.explicit_skill_terms),
+                bool(state.named_records),
+                bool(state.job_levels),
+                bool(state.category_codes),
+                bool(state.include_terms),
+            )
+        )
+
+    def _identify_missing_slots(self, state: ConversationState) -> list[str]:
+        text = normalize_text(state.combined_user_text)
+        missing: list[str] = []
+
+        if state.direct_recommendation_request and not self._has_scope_anchor(state):
+            missing.append("role_scope")
+        if state.role_family == "contact_center":
+            if not any(language in text for language in ("english", "spanish", "french", "portuguese")):
+                missing.append("contact_center_language")
+            elif contains_phrase(text, "english") and not contains_any_phrase(text, ("us", "uk", "australian", "indian")):
+                missing.append("english_variant")
+        if contains_phrase(text, "full stack") and len(state.explicit_skill_terms) >= 4:
+            if not any(term in text for term in ("backend leaning", "backend-leaning", "frontend heavy", "balanced")):
+                missing.append("technical_orientation")
+        if state.role_family == "leadership" and not any(
+            term in text for term in ("selection", "development", "reskill", "feedback", "succession benchmarking")
+        ):
+            missing.append("leadership_use_case")
+        if "spanish" in text and state.role_family == "healthcare_admin":
+            if not any(term in text for term in ("hybrid", "english fluent", "functionally bilingual")):
+                missing.append("healthcare_language_tradeoff")
+        return missing
+
     def _maybe_clarify(self, state: ConversationState) -> str | None:
         text = normalize_text(state.combined_user_text)
         latest = normalize_text(state.latest_user_text)
@@ -468,6 +581,32 @@ class SHLAgentService:
                     "There’s a catalog constraint: the HIPAA and medical terminology knowledge tests are English-only. "
                     "Should I build a hybrid battery with English knowledge tests and Spanish personality measures, or keep it Spanish-only?"
                 )
+        return None
+
+    def _maybe_clarify(self, state: ConversationState) -> str | None:
+        if state.clarification_count >= 2 or state.remaining_turns < 2:
+            return None
+
+        latest = normalize_text(state.latest_user_text)
+        if state.latest_message_is_vague or latest in {"i need an assessment", "we need an assessment", "need assessment"}:
+            return "What role are you hiring for, and what level or core skills matter most day one?"
+
+        slot = state.missing_slots[0] if state.missing_slots else ""
+        if slot == "role_scope":
+            return "What role are you hiring for, and what level or core skills matter most day one?"
+        if slot == "contact_center_language":
+            return "What language do callers use? That determines which SHL spoken-language screen fits."
+        if slot == "english_variant":
+            return "Which English variant fits your operation: US, UK, Australian, or Indian?"
+        if slot == "technical_orientation":
+            return "Is this backend-leaning, frontend-heavy, or a balanced full-stack role? That changes which stack tests belong in the shortlist."
+        if slot == "leadership_use_case":
+            return "Is this for selection, succession benchmarking, or development feedback? That changes whether I keep this instrument-only or add leadership reports."
+        if slot == "healthcare_language_tradeoff":
+            return (
+                "There's a catalog constraint: the HIPAA and medical terminology knowledge tests are English-only. "
+                "Should I build a hybrid battery with English knowledge tests and Spanish personality measures, or keep it Spanish-only?"
+            )
         return None
 
     def _rank_candidates(self, state: ConversationState) -> list[SearchCandidate]:
@@ -550,6 +689,28 @@ class SHLAgentService:
             if "sales" in normalized_all and ("sales" in record_text or "global skills" in record_text):
                 score += 0.5
                 reasons.append("sales_fit")
+            if state.role_family == "healthcare_admin" and any(
+                term in record_text for term in ("hipaa", "medical terminology", "word 365", "dependability and safety")
+            ):
+                score += 0.5
+                reasons.append("healthcare_fit")
+            if state.role_family == "operations" and "safety" in record_text:
+                score += 0.5
+                reasons.append("operations_fit")
+            if state.role_family == "graduate_management" and any(
+                term in record_text for term in ("graduate scenarios", "verify interactive g+", "opq32r")
+            ):
+                score += 0.5
+                reasons.append("graduate_fit")
+            if state.role_family == "leadership" and any(term in record_text for term in ("leadership", "opq", "competency report")):
+                score += 0.5
+                reasons.append("leadership_fit")
+            if state.use_case == "development" and state.role_family in {"sales", "leadership"}:
+                if record.test_type == "K" and not any(
+                    term in record_text for term in ("sales", "global skills", "development", "leadership")
+                ):
+                    score -= 0.9
+                    reasons.append("development_irrelevant_knowledge_penalty")
 
             if any(term and term in record_text for term in state.include_terms):
                 score += 1.0
@@ -565,11 +726,30 @@ class SHLAgentService:
         candidates.sort(key=lambda item: item.score, reverse=True)
         return candidates
 
+    def _profile_seed_names(self, state: ConversationState, text: str) -> tuple[str, ...]:
+        if state.role_family == "leadership":
+            return PROFILE_PRODUCT_NAMES["leadership"]
+        if state.role_family == "sales" and state.use_case == "development":
+            return PROFILE_PRODUCT_NAMES["sales_development"]
+        if state.role_family == "contact_center":
+            return PROFILE_PRODUCT_NAMES["contact_center"]
+        if state.role_family == "finance" and ("financial analyst" in text or ("financial" in text and "graduate" in text)):
+            return PROFILE_PRODUCT_NAMES["finance"]
+        if state.role_family == "operations":
+            return PROFILE_PRODUCT_NAMES["operations"]
+        if state.role_family == "healthcare_admin":
+            return PROFILE_PRODUCT_NAMES["healthcare_admin"]
+        if state.role_family == "graduate_management" or ("graduate" in text and {"A", "P"}.issubset(state.category_codes)):
+            return PROFILE_PRODUCT_NAMES["graduate_management"]
+        if state.role_family == "admin":
+            return PROFILE_PRODUCT_NAMES["admin"]
+        return ()
+
     def _assemble_shortlist(self, state: ConversationState, candidates: list[SearchCandidate]) -> list[CatalogRecord]:
         selected: list[CatalogRecord] = []
         seen: set[str] = set()
         text = normalize_text(state.combined_user_text)
-        has_technical_stack = any(term in text for term in TECH_STACK_TERMS)
+        has_technical_stack = bool(state.explicit_skill_terms)
         backend_leaning = any(term in text for term in ("backend leaning", "backend-leaning"))
         frontend_secondary = any(term in text for term in ("occasional", "secondary", "review frontend", "review frontend prs"))
         wants_reports = state.use_case == "development" or any(
@@ -613,6 +793,9 @@ class SHLAgentService:
 
         for record in state.prior_shortlist:
             add_record(record)
+
+        for name in self._profile_seed_names(state, text):
+            add_record(self.catalog.by_name.get(name))
 
         if any(term in text for term in ("leadership", "executive", "cxo")):
             for name in (
