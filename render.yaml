@@ -3,5 +3,5 @@ services:
     name: infosys-valuation-workbench
     runtime: static
     buildCommand: "true"
-    staticPublishPath: .
+    staticPublishPath: public
     autoDeployTrigger: commit

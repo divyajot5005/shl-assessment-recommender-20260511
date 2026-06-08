@@ -21,6 +21,7 @@ Build a Python-automated valuation model for Infosys that answers:
 - `assets/app.js` - Lightweight tabs, section reveal, and active navigation behavior.
 - `assets/infosys-logo.svg` - Local Infosys logo asset used by the dashboard.
 - `render.yaml` - Render Blueprint for hosting the dashboard as a static site.
+- `public/` - Static deploy folder used by Render.
 - `data/fy2026_actuals.csv` - Current FY2026 actuals used for prediction validation.
 - `src/validate_fy2026_actuals.py` - Forecast-vs-actual back-test script.
 - `outputs/infosys_valuation_model.xlsx` - Excel workbook with actuals, assumptions, DCF, LBO, and sensitivities.
@@ -58,7 +59,7 @@ services:
     name: infosys-valuation-workbench
     runtime: static
     buildCommand: "true"
-    staticPublishPath: .
+    staticPublishPath: public
     autoDeployTrigger: commit
 ```
 
