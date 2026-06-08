@@ -1,0 +1,5 @@
+__pycache__/
+.venv/
+*.pyc
+src/__pycache__/
+Sector Analysis/

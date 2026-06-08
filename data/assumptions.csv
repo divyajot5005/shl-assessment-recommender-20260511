@@ -1,0 +1,27 @@
+Section,Assumption,Value,Notes
+DCF,Revenue Growth FY2026,0.030,Low-growth base case from FY2025 actuals.
+DCF,Revenue Growth FY2027,0.040,Recovery in discretionary IT spend.
+DCF,Revenue Growth FY2028,0.050,Mid-cycle services growth.
+DCF,Revenue Growth FY2029,0.050,AI/cloud transformation offsets pricing pressure.
+DCF,Revenue Growth FY2030,0.045,Tapers toward terminal growth.
+DCF,EBIT Margin FY2026,0.208,Near Infosys historical operating range.
+DCF,EBIT Margin FY2027,0.210,Modest utilization and pyramid benefit.
+DCF,EBIT Margin FY2028,0.212,Operating leverage from revenue recovery.
+DCF,EBIT Margin FY2029,0.213,Stable mature services margin.
+DCF,EBIT Margin FY2030,0.212,Terminal-quality margin.
+DCF,Cash Tax Rate,0.255,Normalized Indian corporate cash tax assumption.
+DCF,D&A % Revenue,0.030,Capital-light IT services model.
+DCF,Capex % Revenue,0.012,Maintenance capex intensity.
+DCF,NWC % Revenue,0.125,Receivables and unbilled revenue intensity.
+DCF,WACC,0.100,India IT equity risk premium plus low leverage.
+DCF,Terminal Growth,0.030,Long-run nominal growth assumption.
+DCF,Shares Outstanding Crore,414.8,Approx. from FY2025 equity share capital / par value.
+DCF,Market Price INR,1500,Illustrative benchmark; update for live trading.
+LBO,Entry EBITDA Multiple,12.0,Large-cap Indian IT services transaction benchmark.
+LBO,Exit EBITDA Multiple,12.0,Base exit case held equal to entry multiple.
+LBO,Debt / EBITDA at Close,2.0,Base leverage case for sensitivity.
+LBO,Cash Sweep %,0.800,Excess FCF after interest used for repayment.
+LBO,Interest Rate,0.085,INR acquisition debt assumption.
+LBO,Min Cash,5000,Cash retained in business.
+LBO,Sponsor Transaction Fee %,0.020,Fees as % of entry enterprise value.
+LBO,Management Rollover %,0.000,Simple clean sponsor-control case.

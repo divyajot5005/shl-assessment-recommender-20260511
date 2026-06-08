@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Infosys Valuation Workbench</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Workspace navigation">
+        <div class="brand">
+          <img class="brand-logo" src="assets/infosys-logo.svg" alt="Infosys" />
+          <div>
+            <strong>Infosys</strong>
+            <span>Valuation Workbench</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#validation">FY26 Check</a>
+          <a href="#dcf">DCF</a>
+          <a href="#lbo">LBO</a>
+          <a href="#sensitivities">Sensitivities</a>
+          <a href="#memo">Memo</a>
+        </nav>
+
+        <div class="source-note">
+          <span>Data scope</span>
+          <strong>FY2022-FY2025 actuals only</strong>
+          <p>Forecast years begin at FY2026 and are driven by assumptions.</p>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Valuation & Modeling</span>
+            <h1>Infosys DCF and 3-statement LBO analysis</h1>
+          </div>
+          <div class="actions" aria-label="Project output links">
+            <a href="outputs/infosys_valuation_model.xlsx">Workbook</a>
+            <a href="outputs/fy2026_prediction_validation.xlsx">Validation</a>
+            <a href="outputs/investment_memo.md">Memo</a>
+          </div>
+        </header>
+
+        <section id="overview" class="section hero-panel reveal">
+          <div class="hero-copy">
+            <span class="status-chip">Base case: valuation cautious</span>
+            <h2>Cash quality is strong. Entry valuation does most of the damage.</h2>
+            <p>
+              FY2025 free cash flow supports the asset quality case, but the DCF and LBO both show limited upside
+              unless growth accelerates or entry multiple pressure eases.
+            </p>
+          </div>
+
+          <div class="hero-metrics" aria-label="Headline valuation metrics">
+            <div>
+              <span>DCF value / share</span>
+              <strong>INR 1,126</strong>
+              <em>-25.0% vs INR 1,500</em>
+            </div>
+            <div>
+              <span>LBO sponsor IRR</span>
+              <strong>7.7%</strong>
+              <em>1.45x MOIC</em>
+            </div>
+            <div>
+              <span>FY2025 FCF</span>
+              <strong>INR 34,549 cr</strong>
+              <em>129% of net profit</em>
+            </div>
+          </div>
+        </section>
+
+        <section class="section metrics-strip reveal" aria-label="FY2025 financial snapshot">
+          <div>
+            <span>Revenue</span>
+            <strong>162,990</strong>
+            <small>INR crore</small>
+          </div>
+          <div>
+            <span>Operating profit</span>
+            <strong>34,424</strong>
+            <small>21.1% margin</small>
+          </div>
+          <div>
+            <span>Net profit</span>
+            <strong>26,750</strong>
+            <small>INR crore</small>
+          </div>
+          <div>
+            <span>Net cash</span>
+            <strong>35,975</strong>
+            <small>cash + investments - debt</small>
+          </div>
+        </section>
+
+        <section id="validation" class="section validation-panel reveal">
+          <div class="section-heading">
+            <span>FY2026 Back-Test</span>
+            <h2>Revenue and cash flow beat the model. Margin was close after normalizing the one-off.</h2>
+            <p>
+              The original model used FY2025 as the last actual year. Infosys has since reported FY2026 actuals,
+              making this a clean forecast audit against current data.
+            </p>
+          </div>
+
+          <div class="validation-grid">
+            <div class="validation-list" aria-label="FY2026 forecast validation highlights">
+              <div>
+                <span>Revenue</span>
+                <strong>+6.4%</strong>
+                <p>Actual INR 178,650 crore vs forecast INR 167,880 crore.</p>
+              </div>
+              <div>
+                <span>Reported operating margin</span>
+                <strong>-50 bps</strong>
+                <p>20.3% actual vs 20.8% forecast, affected by the Labour Codes provision.</p>
+              </div>
+              <div>
+                <span>Adjusted operating margin</span>
+                <strong>+20 bps</strong>
+                <p>21.0% adjusted actual vs 20.8% forecast.</p>
+              </div>
+              <div>
+                <span>Company FCF</span>
+                <strong>+16.3%</strong>
+                <p>Actual INR 33,097 crore vs forecast INR 28,452 crore.</p>
+              </div>
+            </div>
+
+            <div class="validation-chart">
+              <img src="outputs/fy2026_forecast_vs_actual.png" alt="FY2026 forecast versus actual chart" />
+            </div>
+          </div>
+        </section>
+
+        <section id="dcf" class="section split reveal">
+          <div class="section-heading">
+            <span>DCF Build</span>
+            <h2>Terminal value drives most of the equity value.</h2>
+            <p>Base WACC is 10.0%, terminal growth is 3.0%, and net cash is added after enterprise value.</p>
+          </div>
+          <div class="bridge" aria-label="DCF valuation bridge">
+            <div class="bridge-row">
+              <span>PV of forecast FCF</span>
+              <strong>117,506</strong>
+            </div>
+            <div class="bridge-row">
+              <span>PV of terminal value</span>
+              <strong>313,453</strong>
+            </div>
+            <div class="bridge-row">
+              <span>Enterprise value</span>
+              <strong>430,959</strong>
+            </div>
+            <div class="bridge-row">
+              <span>Net cash</span>
+              <strong>35,975</strong>
+            </div>
+            <div class="bridge-row total">
+              <span>Equity value</span>
+              <strong>466,934</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section reveal">
+          <div class="section-heading compact">
+            <span>Forecast Path</span>
+            <h2>Low growth, stable margins, cash conversion intact.</h2>
+          </div>
+          <div class="chart-wrap">
+            <svg class="line-chart" viewBox="0 0 900 280" role="img" aria-label="Revenue and free cash flow forecast chart">
+              <line x1="70" y1="228" x2="840" y2="228" />
+              <line x1="70" y1="32" x2="70" y2="228" />
+              <polyline class="revenue-line" points="70,185 262,169 455,148 648,125 840,105" />
+              <polyline class="fcf-line" points="70,218 262,212 455,205 648,197 840,191" />
+              <g class="chart-labels">
+                <text x="70" y="252">FY26</text>
+                <text x="245" y="252">FY27</text>
+                <text x="438" y="252">FY28</text>
+                <text x="631" y="252">FY29</text>
+                <text x="823" y="252">FY30</text>
+              </g>
+              <text class="legend revenue" x="650" y="52">Revenue</text>
+              <text class="legend fcf" x="650" y="76">FCF</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="lbo" class="section split reveal">
+          <div class="section-heading">
+            <span>LBO Analysis</span>
+            <h2>The business delevers quickly, but the equity check is heavy.</h2>
+            <p>Opening leverage is 2.0x FY2025 EBITDA with an 80% cash sweep and 8.5% cash interest.</p>
+          </div>
+          <div class="lbo-stack">
+            <div class="lbo-row">
+              <span>FY2025 EBITDA</span>
+              <strong>39,284</strong>
+            </div>
+            <div class="lbo-row">
+              <span>Entry EV at 12.0x</span>
+              <strong>471,408</strong>
+            </div>
+            <div class="lbo-row">
+              <span>Opening debt</span>
+              <strong>78,568</strong>
+            </div>
+            <div class="lbo-row">
+              <span>Sponsor equity</span>
+              <strong>402,268</strong>
+            </div>
+            <div class="lbo-row total">
+              <span>5-year IRR</span>
+              <strong>7.7%</strong>
+            </div>
+          </div>
+        </section>
+
+        <section id="sensitivities" class="section reveal">
+          <div class="section-heading compact">
+            <span>Sensitivities</span>
+            <h2>Exit multiple and WACC are the pressure points.</h2>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Sensitivity tables">
+            <button class="tab active" type="button" data-tab="lbo-table">LBO IRR</button>
+            <button class="tab" type="button" data-tab="dcf-table">DCF Value</button>
+            <button class="tab" type="button" data-tab="heatmap">Heatmap</button>
+          </div>
+
+          <div class="tab-panel active" id="lbo-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Debt / EBITDA</th>
+                  <th>10.0x Exit</th>
+                  <th>11.0x Exit</th>
+                  <th>12.0x Exit</th>
+                  <th>13.0x Exit</th>
+                  <th>14.0x Exit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1.0x</td><td>2.0%</td><td>3.9%</td><td>5.8%</td><td>7.5%</td><td>9.1%</td></tr>
+                <tr><td>1.5x</td><td>2.9%</td><td>4.9%</td><td>6.7%</td><td>8.4%</td><td>10.1%</td></tr>
+                <tr><td>2.0x</td><td>3.9%</td><td>5.9%</td><td class="base">7.7%</td><td>9.5%</td><td>11.1%</td></tr>
+                <tr><td>2.5x</td><td>4.9%</td><td>7.0%</td><td>8.8%</td><td>10.6%</td><td>12.2%</td></tr>
+                <tr><td>3.0x</td><td>5.1%</td><td>7.2%</td><td>9.2%</td><td>11.0%</td><td>12.7%</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tab-panel" id="dcf-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Terminal growth</th>
+                  <th>8.5% WACC</th>
+                  <th>9.5% WACC</th>
+                  <th>10.0% WACC</th>
+                  <th>10.5% WACC</th>
+                  <th>11.0% WACC</th>
+                  <th>11.5% WACC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>2.0%</td><td>1,245</td><td>1,088</td><td>1,025</td><td>969</td><td>919</td><td>874</td></tr>
+                <tr><td>2.5%</td><td>1,321</td><td>1,143</td><td>1,072</td><td>1,010</td><td>955</td><td>906</td></tr>
+                <tr><td>3.0%</td><td>1,412</td><td>1,206</td><td class="base">1,126</td><td>1,056</td><td>995</td><td>941</td></tr>
+                <tr><td>3.5%</td><td>1,520</td><td>1,280</td><td>1,188</td><td>1,109</td><td>1,040</td><td>980</td></tr>
+                <tr><td>4.0%</td><td>1,653</td><td>1,367</td><td>1,260</td><td>1,170</td><td>1,092</td><td>1,025</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tab-panel heatmap-panel" id="heatmap">
+            <img src="outputs/lbo_irr_sensitivity.png" alt="LBO IRR sensitivity heatmap" />
+          </div>
+        </section>
+
+        <section id="memo" class="section memo-grid reveal">
+          <div>
+            <span class="eyebrow">Investment View</span>
+            <h2>Quality asset, muted sponsor economics.</h2>
+            <p>
+              Infosys has the characteristics lenders like: scale, recurring client relationships, high conversion,
+              and net cash. The issue is not operating fragility; it is valuation discipline.
+            </p>
+          </div>
+          <ul class="risk-list" aria-label="Primary model risks">
+            <li><span>01</span> Client discretionary spend delays growth recovery.</li>
+            <li><span>02</span> AI-led pricing pressure outruns delivery automation savings.</li>
+            <li><span>03</span> Exit multiple compression absorbs deleveraging gains.</li>
+            <li><span>04</span> INR/USD movement distorts growth and margin translation.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>

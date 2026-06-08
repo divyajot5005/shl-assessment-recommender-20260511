@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: infosys-valuation-workbench
+    runtime: static
+    buildCommand: "true"
+    staticPublishPath: .
+    autoDeployTrigger: commit

@@ -1,0 +1,20 @@
+Model,Metric,Value
+DCF,PV of forecast FCF,117505.9175747269
+DCF,Terminal value,504819.0300852856
+DCF,PV of terminal value,313452.9000659949
+DCF,Enterprise value,430958.8176407218
+DCF,Cash + current investments - debt,35975.0
+DCF,Equity value,466933.8176407218
+DCF,Shares outstanding crore,414.8
+DCF,Implied value / share INR,1125.6842276777286
+DCF,Illustrative market price INR,1500.0
+DCF,Upside / (downside),-0.24954384821484765
+LBO,FY2025 EBITDA,39284.0
+LBO,Entry EV,471408.0
+LBO,Transaction fees,9428.16
+LBO,Opening acquisition debt,78568.0
+LBO,Sponsor equity check,402268.16
+LBO,Exit EV,584148.1752242135
+LBO,Exit equity value,584148.1752242135
+LBO,MOIC,1.452136244698595
+LBO,Sponsor IRR,0.07746078606196183
