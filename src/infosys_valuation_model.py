@@ -11,11 +11,52 @@ from openpyxl.utils import get_column_letter
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 OUTPUTS = ROOT / "outputs"
+LAST_ACTUAL_YEAR = "FY2025"
+FORECAST_START_YEAR = 2026
+FORECAST_END_YEAR = 2030
+MODEL_INPUT_FILES = ("historical_financials.csv", "assumptions.csv")
+EXCLUDED_MODEL_FILES = ("fy2026_actuals.csv",)
+
+
+def fiscal_year_number(year):
+    return int(str(year).upper().replace("FY", "").strip())
+
+
+def validate_model_data_scope(historical, assumptions):
+    years = historical["Fiscal Year"].map(fiscal_year_number)
+    leaked_years = historical.loc[years >= FORECAST_START_YEAR, "Fiscal Year"].tolist()
+    if leaked_years:
+        raise ValueError(
+            "Model historical actuals must stop at "
+            f"{LAST_ACTUAL_YEAR}; found forecast/validation years: {', '.join(leaked_years)}."
+        )
+
+    last_actual = str(historical.iloc[-1]["Fiscal Year"])
+    if last_actual != LAST_ACTUAL_YEAR:
+        raise ValueError(f"Model base year must be {LAST_ACTUAL_YEAR}; found {last_actual}.")
+
+    assumption_text = assumptions.astype(str).apply(lambda row: " ".join(row).lower(), axis=1)
+    blocked_terms = (
+        "fy2026 actual",
+        "fy26 actual",
+        "reported fy2026",
+        "reported fy26",
+        "fy2026 reported",
+        "fy26 reported",
+    )
+    tuned_rows = assumptions[assumption_text.apply(lambda text: any(term in text for term in blocked_terms))]
+    if not tuned_rows.empty:
+        names = ", ".join(tuned_rows["Assumption"].astype(str).tolist())
+        raise ValueError(
+            "Model assumptions cannot reference FY2026 reported results or actuals. "
+            f"Review: {names}."
+        )
 
 
 def load_inputs():
     historical = pd.read_csv(DATA / "historical_financials.csv")
     assumptions = pd.read_csv(DATA / "assumptions.csv")
+    validate_model_data_scope(historical, assumptions)
     assumption_map = {
         row["Assumption"]: float(row["Value"])
         for _, row in assumptions.iterrows()
@@ -26,7 +67,7 @@ def load_inputs():
 
 def forecast_three_statement(historical, a):
     last = historical.iloc[-1]
-    years = [f"FY{y}" for y in range(2026, 2031)]
+    years = [f"FY{y}" for y in range(FORECAST_START_YEAR, FORECAST_END_YEAR + 1)]
     rows = []
     prior_revenue = last["Revenue"]
     prior_nwc = last["NWC"]
@@ -219,6 +260,22 @@ def lbo_sensitivity(forecast, historical, a):
     return pd.DataFrame(rows)
 
 
+def model_data_scope():
+    return pd.DataFrame(
+        [
+            ("Allowed valuation input", ", ".join(MODEL_INPUT_FILES)),
+            ("Last reported actual used by valuation model", LAST_ACTUAL_YEAR),
+            ("Forecast period", f"FY{FORECAST_START_YEAR}-FY{FORECAST_END_YEAR}"),
+            ("Excluded from valuation inputs and tuning", ", ".join(EXCLUDED_MODEL_FILES)),
+            (
+                "FY2026 actuals usage",
+                "Back-test validation only; not used to set, fit, or tune model assumptions.",
+            ),
+        ],
+        columns=["Item", "Scope"],
+    )
+
+
 def make_heatmap(lbo_sens):
     OUTPUTS.mkdir(exist_ok=True)
     values = lbo_sens.drop(columns=["Debt / EBITDA"]).values
@@ -246,6 +303,7 @@ def write_excel(historical, assumptions, forecast, dcf, dcf_summary, dcf_sens, l
     OUTPUTS.mkdir(exist_ok=True)
     workbook_path = OUTPUTS / "infosys_valuation_model.xlsx"
     with pd.ExcelWriter(workbook_path, engine="openpyxl") as writer:
+        model_data_scope().to_excel(writer, sheet_name="Model Data Scope", index=False)
         historical.to_excel(writer, sheet_name="Historical Actuals", index=False)
         assumptions.to_excel(writer, sheet_name="Assumptions", index=False)
         forecast.to_excel(writer, sheet_name="3 Statement Forecast", index=False)
@@ -306,6 +364,7 @@ Base-case DCF value is INR {price:,.0f} per share, implying {upside:.1%} versus 
 ## What the model does
 
 - Uses FY2022-FY2025 reported actuals only; FY2026-FY2030 are forecast years.
+- Excludes FY2026 reported results from valuation inputs and assumption tuning; FY2026 data is only for the separate back-test.
 - Builds a simple 3-statement forecast around revenue, EBIT margin, cash taxes, D&A, capex, and working capital.
 - Values Infosys using an unlevered DCF with terminal-value sensitivity across WACC and terminal growth.
 - Tests a 5-year LBO with acquisition debt, cash interest, cash sweep repayment, MOIC, and IRR sensitivity across leverage and exit multiples.

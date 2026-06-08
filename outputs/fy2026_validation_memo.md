@@ -2,7 +2,7 @@
 
 ## Verdict
 
-The FY2026 forecast was too conservative on revenue and cash generation. Margin quality was closer: reported operating margin missed the forecast because of the Labour Codes provision, but adjusted operating margin was slightly ahead of the model.
+This is a post-model back-test only. FY2026 reported results were not used to build the valuation model or tune its assumptions. The FY2026 forecast was too conservative on revenue and cash generation. Margin quality was closer: reported operating margin missed the forecast because of the Labour Codes provision, but adjusted operating margin was slightly ahead of the model.
 
 ## Forecast vs Actual
 
@@ -17,7 +17,7 @@ The FY2026 forecast was too conservative on revenue and cash generation. Margin 
 - Growth was the main miss: the model assumed 3.0% INR revenue growth, while Infosys delivered 9.6%.
 - Reported operating profit was affected by a one-off Labour Codes provision of INR 1,289 crore.
 - Adjusted operating margin of 21.0% supports the original margin thesis better than the reported 20.3% figure.
-- Cash generation came in stronger than forecast, so the DCF downside was probably too punitive if FY2026 becomes the new base year.
+- Cash generation came in stronger than forecast, which is useful for forecast audit discussion but does not change the current FY2025-base model inputs.
 
 ## Source Notes
 

@@ -1,4 +1,8 @@
-from pathlib import Path
+"""Post-model FY2026 back-test.
+
+This script compares the existing FY2025-base forecast to FY2026 actuals. It
+does not write to model inputs and must not be used to tune assumptions.
+"""
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -6,7 +10,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from infosys_valuation_model import DATA, OUTPUTS, forecast_three_statement, load_inputs
+from infosys_valuation_model import DATA, LAST_ACTUAL_YEAR, OUTPUTS, forecast_three_statement, load_inputs
 
 
 def format_value(value, unit):
@@ -100,6 +104,15 @@ def make_chart(validation):
 
 def write_excel(actuals, validation):
     workbook_path = OUTPUTS / "fy2026_prediction_validation.xlsx"
+    scope = pd.DataFrame(
+        [
+            ("Purpose", "Post-model forecast audit only"),
+            ("Model base year remains", LAST_ACTUAL_YEAR),
+            ("Writes to model inputs", "No"),
+            ("Used for assumption tuning", "No"),
+        ],
+        columns=["Item", "Scope"],
+    )
     display_cols = [
         "Metric",
         "Forecast Display",
@@ -110,6 +123,7 @@ def write_excel(actuals, validation):
         "Source",
     ]
     with pd.ExcelWriter(workbook_path, engine="openpyxl") as writer:
+        scope.to_excel(writer, sheet_name="Scope Note", index=False)
         actuals.to_excel(writer, sheet_name="FY2026 Actuals", index=False)
         validation.to_excel(writer, sheet_name="Validation Raw", index=False)
         validation[display_cols].to_excel(writer, sheet_name="Validation Summary", index=False)
@@ -144,7 +158,7 @@ def write_memo(validation, chart_path):
 
 ## Verdict
 
-The FY2026 forecast was too conservative on revenue and cash generation. Margin quality was closer: reported operating margin missed the forecast because of the Labour Codes provision, but adjusted operating margin was slightly ahead of the model.
+This is a post-model back-test only. FY2026 reported results were not used to build the valuation model or tune its assumptions. The FY2026 forecast was too conservative on revenue and cash generation. Margin quality was closer: reported operating margin missed the forecast because of the Labour Codes provision, but adjusted operating margin was slightly ahead of the model.
 
 ## Forecast vs Actual
 
@@ -159,7 +173,7 @@ The FY2026 forecast was too conservative on revenue and cash generation. Margin 
 - Growth was the main miss: the model assumed 3.0% INR revenue growth, while Infosys delivered 9.6%.
 - Reported operating profit was affected by a one-off Labour Codes provision of INR 1,289 crore.
 - Adjusted operating margin of 21.0% supports the original margin thesis better than the reported 20.3% figure.
-- Cash generation came in stronger than forecast, so the DCF downside was probably too punitive if FY2026 becomes the new base year.
+- Cash generation came in stronger than forecast, which is useful for forecast audit discussion but does not change the current FY2025-base model inputs.
 
 ## Source Notes
 

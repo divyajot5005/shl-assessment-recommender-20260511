@@ -7,6 +7,7 @@ Base-case DCF value is INR 1,126 per share, implying -25.0% versus the illustrat
 ## What the model does
 
 - Uses FY2022-FY2025 reported actuals only; FY2026-FY2030 are forecast years.
+- Excludes FY2026 reported results from valuation inputs and assumption tuning; FY2026 data is only for the separate back-test.
 - Builds a simple 3-statement forecast around revenue, EBIT margin, cash taxes, D&A, capex, and working capital.
 - Values Infosys using an unlevered DCF with terminal-value sensitivity across WACC and terminal growth.
 - Tests a 5-year LBO with acquisition debt, cash interest, cash sweep repayment, MOIC, and IRR sensitivity across leverage and exit multiples.

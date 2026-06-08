@@ -24,6 +24,7 @@ Build a Python-automated valuation model for Infosys that answers:
 - `public/` - Static deploy folder used by Render.
 - `data/fy2026_actuals.csv` - Current FY2026 actuals used for prediction validation.
 - `src/validate_fy2026_actuals.py` - Forecast-vs-actual back-test script.
+- `src/audit_no_fy2026_leakage.py` - Guardrail audit proving FY2026 actuals are not used by the valuation model or assumption tuning.
 - `outputs/infosys_valuation_model.xlsx` - Excel workbook with actuals, assumptions, DCF, LBO, and sensitivities.
 - `outputs/fy2026_prediction_validation.xlsx` - FY2026 validation workbook.
 - `outputs/fy2026_validation_memo.md` - Short model back-test memo.
@@ -36,10 +37,18 @@ Build a Python-automated valuation model for Infosys that answers:
 ```powershell
 pip install -r requirements.txt
 python src\infosys_valuation_model.py
+python src\audit_no_fy2026_leakage.py
+```
+
+The valuation script refreshes the model outputs. The audit script verifies that FY2026 reported results are excluded from valuation inputs and assumption tuning.
+
+Optional FY2026 back-test:
+
+```powershell
 python src\validate_fy2026_actuals.py
 ```
 
-The scripts refresh the model and validation files in `outputs/`.
+The back-test refreshes the validation files in `outputs/`; it does not modify model inputs.
 
 To view the frontend:
 
@@ -137,7 +146,7 @@ Infosys screens as a high-quality, cash-generative IT services company with a st
 
 ## FY2026 Validation
 
-Infosys has now reported FY2026 actuals, so the project includes a separate forecast-vs-actual check. The FY2025-base model was too conservative on revenue and cash generation: FY2026 revenue beat the forecast by 6.4%, CFO beat by 11.6%, and company-reported FCF beat by 16.3%. Reported operating margin missed by 50 bps, but adjusted operating margin beat by 20 bps after excluding the Labour Codes provision.
+Infosys has now reported FY2026 actuals, so the project includes a separate forecast-vs-actual check. This is a post-model audit only: FY2026 reported results are not used by the valuation model and are not used to tune assumptions. The FY2025-base model was too conservative on revenue and cash generation: FY2026 revenue beat the forecast by 6.4%, CFO beat by 11.6%, and company-reported FCF beat by 16.3%. Reported operating margin missed by 50 bps, but adjusted operating margin beat by 20 bps after excluding the Labour Codes provision.
 
 ## Data Sources
 
@@ -151,5 +160,7 @@ Infosys has now reported FY2026 actuals, so the project includes a separate fore
 
 - Figures are in INR crore unless stated otherwise.
 - FY2026 and later are forecast years only.
+- Valuation inputs are limited to `data/historical_financials.csv` and `data/assumptions.csv`.
+- `data/fy2026_actuals.csv` is excluded from valuation and tuning; it is used only by `src/validate_fy2026_actuals.py`.
 - Market price is illustrative and should be updated manually in `data/assumptions.csv` for live use.
 - This is an educational valuation model, not investment advice.
